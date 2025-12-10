@@ -43,36 +43,4 @@ export const LESSONS: Lesson[] = [
     topics: ['Volume', 'Thickness', 'Detail'],
     content: lessonContent.hollowCubes
   },
-  {
-    id: 'lesson-6-tables',
-    title: '6. Stacking Tables',
-    description: 'Construction skills. Learn to stack objects vertically with alignment.',
-    difficulty: 'Intermediate',
-    topics: ['Construction', 'Alignment', 'Furniture'],
-    content: lessonContent.tables
-  },
-  {
-    id: 'lesson-7-adv-cubes',
-    title: '7. Advanced-Level Cubes',
-    description: 'Modifying the cube. Pyramids, ramps, and house-like structures.',
-    difficulty: 'Advanced',
-    topics: ['Modification', 'Architecture', 'Slopes'],
-    content: lessonContent.advancedCubes
-  },
-  {
-    id: 'lesson-8-koalas',
-    title: '8. Cool Koalas',
-    description: 'Applying geometric forms to organic characters. Drawing soft textures.',
-    difficulty: 'Advanced',
-    topics: ['Character', 'Texture', 'Organic Forms'],
-    content: lessonContent.koalas
-  },
-  {
-    id: 'lesson-9-rose',
-    title: '9. The Rose',
-    description: 'Organic flow. Drawing spirals, petals, and natural curves.',
-    difficulty: 'Advanced',
-    topics: ['Nature', 'Flow', 'Curves'],
-    content: lessonContent.rose
-  }
 ];
