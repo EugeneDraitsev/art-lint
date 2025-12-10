@@ -9,7 +9,7 @@ export const LESSONS: Lesson[] = [
     difficulty: 'Beginner',
     topics: ['Form', 'Light', 'Shading'],
     content: lessonContent.sphere,
-    thumbnailImage: '/content/beginner-shapes/the-sphere/the-sphere-5.jpg'
+    thumbnailImage: 'https://raw.githubusercontent.com/EugeneDraitsev/art-lint/refs/heads/main/content/beginner-shapes/the-sphere/the-sphere-5.jpg'
   },
   {
     id: 'lesson-2-overlapping',
