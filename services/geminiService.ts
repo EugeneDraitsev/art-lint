@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { AnalysisResult, CritiquePoint } from "../types";
+import { AnalysisResult, CritiquePoint, Lesson } from "../types";
 
 // Initialize Gemini Client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -23,28 +23,40 @@ export const fileToGenerativePart = async (file: File): Promise<string> => {
 
 /**
  * Analyzes the drawing for critique (Text only).
+ * Uses 'gemini-2.5-flash' for fast, standard analysis.
  */
-export const analyzeDrawingText = async (base64Image: string, mimeType: string, lessonContext?: string): Promise<{ critique: string; points: CritiquePoint[]; exercises: string[] }> => {
-  const modelId = "gemini-2.5-flash"; // Optimized for text/multimodal analysis
+export const analyzeDrawingText = async (base64Image: string, mimeType: string, lessonContext?: string): Promise<{ critique: string; points: CritiquePoint[]; exercises: string[]; score: number }> => {
+  const modelId = "gemini-2.5-flash"; 
 
   const contextPrompt = lessonContext 
-    ? `CONTEXT: The student is submitting homework for the lesson: "${lessonContext}". Evaluate them specifically on how well they applied the concepts of this lesson.`
-    : '';
+    ? `CONTEXT: The student is submitting homework for the lesson: "${lessonContext}". 
+       ACT AS A GRADER: Compare their work specifically against the lesson objectives. Did they follow the instructions?`
+    : `CONTEXT: The user has submitted a general drawing for feedback. 
+       ACT AS A GENERAL ART MENTOR: Evaluate the drawing on fundamental art skills.`;
 
   const prompt = `
-    Analyze this student's drawing strictly. 
+    Analyze this student's drawing.
     ${contextPrompt}
     
-    Focus on:
-    1. Perspective (vanishing points, horizon line, depth)
-    2. Anatomy and Proportions (if applicable)
-    3. Line Quality (confidence, weight)
-    4. Light and Shadow (values, light source consistency)
+    CRITICAL CHECK - LIGHT & SHADOW LOGIC:
+    1. Locate the Cast Shadow.
+    2. Locate the Highlight or Light Source (sun/lamp).
+    3. PHYSICS RULE: The Shadow MUST be on the OPPOSITE side of the object from the Light Source.
+    4. IF the shadow and light are on the SAME side, this is a CRITICAL FAILURE. 
+       - You MUST add a "high" severity point titled "Incorrect Light Physics".
+       - Deduct significant points (Score must be below 60).
+       - Explain that shadows fall away from the light.
+
+    SCORING RUBRIC (0-100):
+    - 90-100: Flawless execution. Perfect perspective, clean lines, consistent lighting.
+    - 75-89: Good job. Minor proportion issues or slightly messy shading.
+    - 60-74: Decent attempt. Some perspective errors or inconsistent values.
+    - 40-59: Major errors. Shadow on wrong side, broken perspective, or very scribbly.
+    - 0-39: Low effort or fundamental misunderstanding of the assignment.
 
     Provide a JSON response.
-    Ensure "critique" is a concise paragraph (under 100 words).
+    Ensure "score" is an integer (0-100).
     Ensure "points" has 3-5 specific feedback items.
-    Ensure "exercises" lists 3 actionable practice tasks.
     DO NOT return the image data in the response.
   `;
 
@@ -52,6 +64,7 @@ export const analyzeDrawingText = async (base64Image: string, mimeType: string, 
     type: Type.OBJECT,
     properties: {
       critique: { type: Type.STRING },
+      score: { type: Type.INTEGER },
       points: {
         type: Type.ARRAY,
         items: {
@@ -82,17 +95,25 @@ export const analyzeDrawingText = async (base64Image: string, mimeType: string, 
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
-        temperature: 0.4, // Lower temperature for more analytical/structured output
-        maxOutputTokens: 2000,
-        systemInstruction: "You are a world-class art teacher. Output strictly valid JSON. Do not use Markdown code blocks. Keep responses concise and focused on art improvement."
+        temperature: 0.4, 
+        maxOutputTokens: 8192, // Increased limit to prevent truncation
+        thinkingConfig: { thinkingBudget: 1024 }, // Set thinkingBudget when using maxOutputTokens
+        systemInstruction: "You are a strict but encouraging art teacher. Focus heavily on physical accuracy (lighting/perspective)."
       }
     });
 
     let text = response.text || "{}";
     
-    // Robust cleanup for markdown code blocks (e.g. ```json ... ```)
+    // Clean up Markdown code blocks if present
     if (text.includes("```")) {
       text = text.replace(/```json/g, "").replace(/```/g, "");
+    }
+
+    // Locate the first '{' and last '}' to handle potential conversational text wrapper
+    const firstOpenBrace = text.indexOf('{');
+    const lastCloseBrace = text.lastIndexOf('}');
+    if (firstOpenBrace !== -1 && lastCloseBrace !== -1 && lastCloseBrace > firstOpenBrace) {
+        text = text.substring(firstOpenBrace, lastCloseBrace + 1);
     }
     
     return JSON.parse(text);
@@ -107,22 +128,27 @@ export const analyzeDrawingText = async (base64Image: string, mimeType: string, 
 
 /**
  * Generates the "Teacher Overlay" - Original image with red correction lines.
+ * Uses 'gemini-2.5-flash-image'.
  */
 export const generateOverlay = async (base64Image: string, mimeType: string, lessonContext?: string): Promise<string | null> => {
   const modelId = "gemini-2.5-flash-image";
 
   const contextPrompt = lessonContext 
     ? `The student is practicing: "${lessonContext}". Mark mistakes relevant to this lesson.`
-    : '';
+    : `Mark general errors in perspective, anatomy, or lighting.`;
 
   const prompt = `
-    You are a strict art teacher grading a student's homework.
+    You are a strict art teacher.
     Output the EXACT SAME IMAGE but draw BRIGHT RED CORRECTION LINES over it to highlight mistakes.
     ${contextPrompt}
-    1. Draw perspective lines (vanishing points) in RED if the perspective is off.
-    2. Circle anatomical errors in RED.
-    3. Draw arrows indicating where light should be coming from if shading is wrong.
-    DO NOT change the style, composition, or content of the drawing. Just add the red teacher's markings on top.
+    
+    CORRECTION RULES:
+    1. LIGHTING CHECK: Look at the shadow. Draw a BLUE arrow representing the ACTUAL direction of light required to cast that shadow. 
+       If the user drew a sun/light on the wrong side, cross it out with a RED X.
+    2. PERSPECTIVE: Draw vanishing lines in RED if the perspective is off.
+    3. ANATOMY/FORM: Circle lumpy or incorrectly shaped areas in RED.
+    
+    Keep the original drawing visible, just add the correction markup.
   `;
 
   try {
@@ -152,26 +178,29 @@ export const generateOverlay = async (base64Image: string, mimeType: string, les
 
 /**
  * Generates a "Structure Guide" - Breakdown of geometric shapes.
+ * Uses 'gemini-2.5-flash-image'.
  */
 export const generateStructureGuide = async (base64Image: string, mimeType: string, lessonContext?: string): Promise<string | null> => {
   const modelId = "gemini-2.5-flash-image"; 
 
   const contextPrompt = lessonContext 
-    ? `Emphasize the specific structures taught in: "${lessonContext}".`
-    : '';
+    ? `Emphasize structures from: "${lessonContext}".`
+    : `Break down the drawing into basic geometric forms.`;
 
   const prompt = `
-    Create an educational "How to Draw" diagram overlay for this image.
+    Create an educational "How to Draw" diagram overlay.
     ${contextPrompt}
     
     Instructions:
-    1. Analyze the subjects in the image.
-    2. Draw a geometric wireframe (construction lines) OVER the original image to show how it is built.
-    3. Use simple 3D shapes: spheres for heads/joints, cylinders for limbs, cubes for boxes.
-    4. Use BRIGHT BLUE or RED lines for the wireframe so it stands out against the original drawing.
-    5. The goal is to teach the student the underlying 3D structure of their drawing.
+    1. Draw a geometric wireframe (spheres, cubes, cylinders) OVER the image in BLUE or RED lines.
+    2. LIGHTING ANALYSIS: 
+       - Look at the cast shadow on the ground.
+       - Draw a YELLOW arrow showing the direction of light that WOULD cause this shadow.
+       - Label it "LIGHT SOURCE".
+       - Warning: Do NOT just label the user's sun if it's in the wrong place. Trust the shadow.
+    3. Show the "Core Shadow" terminator line on the object itself.
     
-    Output the image with the wireframe overlay.
+    The goal is to show the *correct* 3D structure and lighting physics, correcting the user if they were wrong.
   `;
 
   try {
@@ -201,27 +230,26 @@ export const generateStructureGuide = async (base64Image: string, mimeType: stri
 
 
 /**
- * Generates a "Fixed" version of the drawing (Image to Image).
+ * Generates a "Fixed" version of the drawing.
+ * Uses 'gemini-2.5-flash-image'.
  */
 export const generateFixedVersion = async (base64Image: string, mimeType: string, lessonContext?: string): Promise<string | null> => {
   const modelId = "gemini-2.5-flash-image";
 
   const contextPrompt = lessonContext 
-    ? `Ensure the fixed version perfectly demonstrates the technique from: "${lessonContext}".`
-    : '';
+    ? `Demonstrate the technique from: "${lessonContext}".`
+    : `Improve technical execution.`;
 
   const prompt = `
-    Act as a master artist.
     Redraw the provided image to fix technical errors.
     ${contextPrompt}
     
-    Instructions:
-    1. Fix perspective issues.
-    2. Fix anatomical proportion errors.
-    3. Keep the EXACT same style, character, and composition. Do not change the subject.
-    4. This should look like the "polished" version of the student's sketch.
+    CRITICAL FIXES:
+    - If the user put the shadow and light on the same side, MOVE THE SHADOW to the opposite side of the light source.
+    - Fix perspective and proportions.
+    - Keep the same style and composition, just make it "correct".
     
-    Output the fixed image.
+    This is the "polished" version of the student's work.
   `;
 
   try {
@@ -247,5 +275,56 @@ export const generateFixedVersion = async (base64Image: string, mimeType: string
   } catch (error) {
     console.error("Image Generation Error:", error);
     return null;
+  }
+};
+
+/**
+ * Generates a personalized lesson based on mistakes.
+ */
+export const generateLessonPlan = async (critiquePoints: CritiquePoint[]): Promise<Lesson> => {
+  const modelId = "gemini-2.5-flash";
+  const prompt = `
+    The student has submitted a drawing and received the following critique points:
+    ${JSON.stringify(critiquePoints)}
+
+    Based on these specific mistakes, generate a custom 5-step drawing lesson (Markdown) to help them practice and fix these issues.
+    
+    REQUIREMENTS:
+    - Return a valid JSON object matching the 'Lesson' interface.
+    - 'id': "custom-lesson-[timestamp]"
+    - 'title': A catchy title focusing on the main weakness (e.g., "Mastering Shadows", "Fixing Perspective").
+    - 'description': Brief summary.
+    - 'difficulty': "Intermediate"
+    - 'topics': [Array of 3 tags]
+    - 'content': Full Markdown content. Include 5 steps. Use placeholders like [Draw a circle] for images, but keep text instructive.
+    - 'thumbnailImage': Leave this empty or null.
+  `;
+
+  const responseSchema: Schema = {
+    type: Type.OBJECT,
+    properties: {
+      id: { type: Type.STRING },
+      title: { type: Type.STRING },
+      description: { type: Type.STRING },
+      difficulty: { type: Type.STRING, enum: ['Beginner', 'Intermediate', 'Advanced'] },
+      topics: { type: Type.ARRAY, items: { type: Type.STRING } },
+      content: { type: Type.STRING },
+    }
+  };
+
+  try {
+    const response = await ai.models.generateContent({
+      model: modelId,
+      contents: { text: prompt },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: responseSchema,
+      }
+    });
+
+    return JSON.parse(response.text || "{}");
+  } catch (error) {
+    console.error("Lesson Generation Error:", error);
+    throw new Error("Failed to generate lesson.");
   }
 };

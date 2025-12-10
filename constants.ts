@@ -9,7 +9,7 @@ export const LESSONS: Lesson[] = [
     difficulty: 'Beginner',
     topics: ['Form', 'Light', 'Shading'],
     content: lessonContent.sphere,
-    thumbnailImage: 'https://raw.githubusercontent.com/EugeneDraitsev/art-lint/refs/heads/main/content/beginner-shapes/the-sphere/the-sphere-5.jpg'
+    thumbnailImage: 'https://raw.githubusercontent.com/EugeneDraitsev/art-lint/refs/heads/content/content/beginner-shapes/the-sphere/the-sphere-5.jpg'
   },
   {
     id: 'lesson-2-overlapping',
@@ -17,15 +17,17 @@ export const LESSONS: Lesson[] = [
     description: 'Create instant depth by placing objects behind one another.',
     difficulty: 'Beginner',
     topics: ['Depth', 'Placement', 'Size'],
-    content: lessonContent.overlapping
+    content: lessonContent.overlapping,
+    thumbnailImage: 'https://raw.githubusercontent.com/EugeneDraitsev/art-lint/refs/heads/content/content/beginner-shapes/overlapping-spheres/5.jpg'
   },
   {
     id: 'lesson-3-adv-spheres',
-    title: '3. Advanced-Level Spheres',
+    title: '3. Advanced Spheres',
     description: 'Master texture, density, and complex arrangements of spheres.',
     difficulty: 'Intermediate',
     topics: ['Texture', 'Density', 'Composition'],
-    content: lessonContent.advancedSpheres
+    content: lessonContent.advancedSpheres,
+    thumbnailImage: 'https://raw.githubusercontent.com/EugeneDraitsev/art-lint/refs/heads/content/content/beginner-shapes/advanced-level-spheres/5.jpg'
   },
   {
     id: 'lesson-4-cube',
@@ -33,14 +35,16 @@ export const LESSONS: Lesson[] = [
     description: 'Unlock 3D construction with the "Y-Method" for perfect cubes.',
     difficulty: 'Beginner',
     topics: ['Perspective', 'Structure', 'Geometry'],
-    content: lessonContent.cube
+    content: lessonContent.cube,
+    thumbnailImage: 'https://raw.githubusercontent.com/EugeneDraitsev/art-lint/refs/heads/content/content/beginner-shapes/the-cube/5.jpg'
   },
   {
-    id: 'lesson-5-hollow-cubes',
-    title: '5. Hollow Cubes',
-    description: 'Give your boxes volume and thickness. Learn to see inside the form.',
-    difficulty: 'Intermediate',
-    topics: ['Volume', 'Thickness', 'Detail'],
-    content: lessonContent.hollowCubes
-  },
+    id: 'lesson-5-cylinder',
+    title: '5. The Cylinder',
+    description: 'Combine curves and lines to create cans, towers, and cups.',
+    difficulty: 'Beginner',
+    topics: ['Form', 'Curves', 'Structure'],
+    content: lessonContent.cylinder,
+    thumbnailImage: 'https://raw.githubusercontent.com/EugeneDraitsev/art-lint/refs/heads/content/content/beginner-shapes/the-cylinder/5.jpg'
+  }
 ];

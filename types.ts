@@ -22,6 +22,13 @@ export interface AnalysisResult {
   textCritique: string;
   points: CritiquePoint[];
   suggestedExercises: string[];
+  score: number; // 0-100
+}
+
+export interface SubmissionRecord {
+  lessonId: string;
+  score: number;
+  timestamp: number;
 }
 
 export enum AppState {
@@ -29,5 +36,6 @@ export enum AppState {
   ANALYZING = 'ANALYZING',
   RESULTS = 'RESULTS',
   LESSONS = 'LESSONS',
-  LESSON_DETAIL = 'LESSON_DETAIL'
+  LESSON_DETAIL = 'LESSON_DETAIL',
+  ABOUT = 'ABOUT'
 }

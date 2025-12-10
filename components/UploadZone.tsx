@@ -42,9 +42,9 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isProcessi
 
   return (
     <div 
-      className={`relative w-full max-w-2xl mx-auto h-96 rounded-2xl border-4 border-dashed transition-all duration-300 ease-in-out flex flex-col items-center justify-center p-6 text-center
-        ${dragActive ? 'border-indigo-500 bg-gray-800' : 'border-gray-700 bg-gray-900'}
-        ${isProcessing ? 'opacity-50 pointer-events-none' : 'hover:border-gray-500'}
+      className={`relative w-full max-w-2xl mx-auto h-80 rounded-lg border-2 border-dashed transition-all duration-300 ease-in-out flex flex-col items-center justify-center p-8 text-center
+        ${dragActive ? 'border-sky-500 bg-stone-800' : 'border-stone-700 bg-stone-900/50'}
+        ${isProcessing ? 'opacity-50 pointer-events-none' : 'hover:border-stone-500 hover:bg-stone-900'}
       `}
       onDragEnter={handleDrag}
       onDragLeave={handleDrag}
@@ -62,27 +62,27 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isProcessi
 
       {isProcessing ? (
         <div className="flex flex-col items-center animate-pulse">
-          <Loader2 className="w-16 h-16 text-indigo-500 animate-spin mb-4" />
-          <h3 className="text-xl font-semibold text-white">Gemini is analyzing your art...</h3>
-          <p className="text-gray-400 mt-2">Checking perspective, anatomy, and style.</p>
+          <Loader2 className="w-12 h-12 text-sky-400 animate-spin mb-4" />
+          <h3 className="text-xl font-semibold text-stone-200 font-serif">Gemini is analyzing your art...</h3>
+          <p className="text-stone-500 mt-2">Checking perspective, anatomy, and style.</p>
         </div>
       ) : (
         <>
-          <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform">
-            <UploadCloud className="w-10 h-10 text-indigo-400" />
+          <div className="w-16 h-16 bg-stone-800 rounded-full flex items-center justify-center mb-6 shadow-md border border-stone-700 group-hover:scale-110 transition-transform">
+            <UploadCloud className="w-8 h-8 text-sky-400" />
           </div>
-          <h3 className="text-2xl font-bold text-white mb-2">Upload your Drawing</h3>
-          <p className="text-gray-400 mb-6 max-w-sm">
-            Drag and drop your sketch, line art, or painting here, or click to browse.
+          <h3 className="text-2xl font-bold text-stone-200 mb-2 font-serif">Upload your Drawing</h3>
+          <p className="text-stone-500 mb-8 max-w-sm">
+            Drag and drop your sketch, line art, or painting here.
           </p>
           <button 
             onClick={onButtonClick}
-            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-indigo-500/20"
+            className="px-8 py-2.5 bg-stone-100 hover:bg-white text-stone-900 rounded-md font-bold transition-colors shadow-lg"
           >
             Select File
           </button>
-          <div className="mt-8 flex items-center text-xs text-gray-500">
-            <ImageIcon className="w-4 h-4 mr-1" />
+          <div className="mt-6 flex items-center text-xs text-stone-600 font-medium uppercase tracking-wide">
+            <ImageIcon className="w-3 h-3 mr-1.5" />
             Supports JPG, PNG, WEBP
           </div>
         </>
