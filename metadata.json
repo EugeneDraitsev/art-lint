@@ -1,0 +1,5 @@
+{
+  "name": "ArtLint",
+  "description": "An AI-powered drawing tutor that analyzes your artwork, corrects mistakes in perspective and anatomy, and provides personalized lessons to improve your skills.",
+  "requestFramePermissions": []
+}
